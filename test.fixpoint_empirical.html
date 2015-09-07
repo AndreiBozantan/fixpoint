@@ -1,0 +1,45 @@
+<html>
+<head>
+<script src="fixpoint.js"></script>
+</head>
+
+<body>
+<script>
+(function()
+{
+	function f(x)
+	{
+		return Math.pow((1 - x), 6);
+	}
+
+	function alphan(n)
+	{
+		return 1 / (n + 1);
+	}
+
+	function betan(n)
+	{
+		return 1 / (n + 2);
+	}
+
+	var lambda = 0.5;
+
+	var options = { maxError : 1e-5 };
+
+	function test(x0)
+	{
+		var ret0 = fixpoint.picard(f, x0, options);
+		var ret1 = fixpoint.krasnoselskii(f, lambda, x0, options);
+		var ret2 = fixpoint.mann(f, alphan, x0, options);
+		var ret3 = fixpoint.ishikawa(f, alphan, betan, x0, options);
+		console.log(ret0, ret1, ret2, ret3);
+		var s = fixpoint.compare([ret0, ret1, ret2, ret3], 5, 'text');
+		console.log(s);
+	}
+
+	test(2);
+	test(2.1347);
+})();
+</script>
+</body>
+</html>

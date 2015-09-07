@@ -1,0 +1,72 @@
+<html>
+<head>
+<script src="fixpoint.js"></script>
+</head>
+
+<body>
+<script>
+(function() {
+
+function f(x)
+{
+	if (x >= 0 && x < 1/2)
+		return 2/3 * x;
+	if (x >= 1/2 && x < 1)
+		return 2/3 * x + 1/3;
+}
+
+var retRelative = fixpoint.picard(f, 0.25, {
+	convergenceTest: fixpoint.errtest.relative,
+	maxError : 1e-3,
+	maxSteps : 100
+});
+console.log(retRelative);
+printIterWithRelativeError(retRelative.values);
+
+
+var retMixed = fixpoint.picard(f, 0.25, {
+	convergenceTest: fixpoint.errtest.mixed,
+	maxError : 1e-3,
+	maxSteps : 100
+});
+console.log(retMixed);
+printIterWithRelativeError(retMixed.values);
+
+
+function printIterWithRelativeError(values)
+{
+	function mixedError(x, xprev1, xprev2)
+	{
+		return (Math.abs(x - xprev1) + Math.abs(xprev1 - xprev2)) / (1 + Math.abs(x));
+	}
+
+	function relativeError(a, b)
+	{
+		return Math.abs(a - b) / Math.max(a, b);
+	}
+
+	var xprev1 = values[0];
+	var xprev2 = values[0];
+	var x = values[0]
+
+	document.write("<pre>");
+	for (var i = 1; i < values.length; i++)
+	{
+		x = values[i];
+
+		document.write((i < 10 ? " " : "") + i.toString() + " & " + x.toFixed(8) + " & " + relativeError(x, xprev1).toFixed(4) + " & " + mixedError(x, xprev1, xprev2).toFixed(4) + "\\\\\n");
+
+		xprev2 = xprev1;
+		xprev1 = x;
+
+	}
+
+	document.write("\n");
+	document.write("</pre>");
+}
+
+})();
+
+</script>
+</body>
+</html>

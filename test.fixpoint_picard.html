@@ -1,0 +1,42 @@
+<html>
+<head>
+<script src="fixpoint.js"></script>
+</head>
+
+<body>
+<script>
+
+(function()
+{
+	function f(x)
+	{
+		if (x >= 0 && x < 1/2)
+			return 2/3 * x;
+		if (x >= 1/2 && x < 1)
+			return 2/3 * x + 1/3;
+	}
+
+	var ret05 = fixpoint.picard(f, 0.05, { maxRelativeError : 1e-4 } );
+	var ret10 = fixpoint.picard(f, 0.10, { maxRelativeError : 1e-4 } );
+	var ret15 = fixpoint.picard(f, 0.15, { maxRelativeError : 1e-4 } );
+	var ret25 = fixpoint.picard(f, 0.25, { maxRelativeError : 1e-4 } );
+	var ret35 = fixpoint.picard(f, 0.35, { maxRelativeError : 1e-4 } );
+	var ret45 = fixpoint.picard(f, 0.45, { maxRelativeError : 1e-4 } );
+
+	var s = fixpoint.compare([ret05, ret10, ret15, ret25, ret35, ret45], 5, 'latex');
+	console.log(s);
+
+	var ret50 = fixpoint.picard(f, 0.50, { maxRelativeError : 1e-4 } );
+	var ret60 = fixpoint.picard(f, 0.60, { maxRelativeError : 1e-4 } );
+	var ret70 = fixpoint.picard(f, 0.70, { maxRelativeError : 1e-4 } );
+	var ret75 = fixpoint.picard(f, 0.75, { maxRelativeError : 1e-4 } );
+	var ret80 = fixpoint.picard(f, 0.80, { maxRelativeError : 1e-4 } );
+	var ret90 = fixpoint.picard(f, 0.90, { maxRelativeError : 1e-4 } );
+
+	var s = fixpoint.compare([ret50, ret60, ret70, ret75, ret80, ret90], 5, 'latex');
+	console.log(s);
+})();
+
+</script>
+</body>
+</html>

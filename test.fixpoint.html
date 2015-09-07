@@ -1,0 +1,258 @@
+<html>
+<head>
+<script src="fixpoint.js"></script>
+</head>
+
+<body>
+<script>
+
+(function()
+{
+
+	function assert(c, msg) {
+		try {
+			if (!c) {
+				throw new Error(msg || 'assert failed');
+			}
+		}
+		catch (e) {
+			console.error(e.stack);
+		}
+	}
+
+	(function()
+	{
+		var ret;
+
+		// valid functions and basic functionality
+		ret = fixpoint.picard(Math.cos, 1.0);
+		assert(ret.xn.toFixed(3) === '0.739');
+
+		ret = fixpoint.picard(function(x) { return 2 * x / 3 }, 1.0, {maxError : 1e-4});
+		assert(ret.xn.toFixed(3) === '0.000');
+
+		// invalid function
+		ret = fixpoint.picard(null, 1.0);
+		assert(ret.errorMessage === 'A function is expected.');
+		assert(ret.errorArgument === 'f');
+
+		ret = fixpoint.picard(undefined, 1.0);
+		assert(ret.errorMessage === 'A function is expected.');
+		assert(ret.errorArgument === 'f');
+
+		ret = fixpoint.picard(1, 1.0);
+		assert(ret.errorMessage === 'A function is expected.');
+		assert(ret.errorArgument === 'f');
+
+		ret = fixpoint.picard('cos(x)', 1.0);
+		assert(ret.errorMessage === 'A function is expected.');
+		assert(ret.errorArgument === 'f');
+
+		ret = fixpoint.picard(function(x, y) { return x; }, 1.0);
+		assert(ret.errorMessage === 'The function should have exactly 1 argument.');
+		assert(ret.errorArgument === 'f');
+
+		// invalid x0
+		ret = fixpoint.picard(Math.cos, '1');
+		assert(ret.errorMessage === 'A finite real number is expected.');
+		assert(ret.errorArgument === 'x0');
+
+		ret = fixpoint.picard(Math.cos, NaN);
+		assert(ret.errorMessage === 'A finite real number is expected.');
+		assert(ret.errorArgument === 'x0');
+
+		ret = fixpoint.picard(Math.cos, Number.POSITIVE_INFINITY);
+		assert(ret.errorMessage === 'A finite real number is expected.');
+		assert(ret.errorArgument === 'x0');
+
+		ret = fixpoint.picard(Math.cos, Number.NEGATIVE_INFINITY);
+		assert(ret.errorMessage === 'A finite real number is expected.');
+		assert(ret.errorArgument === 'x0');
+
+		ret = fixpoint.picard(Math.cos, undefined);
+		assert(ret.errorMessage === 'A finite real number is expected.');
+		assert(ret.errorArgument === 'x0');
+
+		ret = fixpoint.picard(Math.cos, null);
+		assert(ret.errorMessage === 'A finite real number is expected.');
+		assert(ret.errorArgument === 'x0');
+
+		// valid options.maxError
+		ret = fixpoint.picard(Math.cos, 1.0, {maxError : undefined, maxSteps : 10});
+		assert(ret.numSteps === 10);
+		assert(ret.errorMessage === 'Maximum number of iterations was reached.');
+
+		ret = fixpoint.picard(Math.cos, 1.0, {maxError : null, maxSteps : 10});
+		assert(ret.numSteps === 10);
+		assert(ret.errorMessage === 'Maximum number of iterations was reached.');
+
+		ret = fixpoint.picard(function(x) { return 2 * x / 3 }, 1.0, {maxError : 1e-3});
+		assert(ret.xn.toFixed(2) === '0.00');
+
+		ret = fixpoint.picard(function(x) { return 2 * x / 3 }, 1.0, {maxError : 1e-5});
+		assert(ret.xn.toFixed(4) === '0.0000');
+
+		// invalid options.maxError 
+		ret = fixpoint.picard(Math.cos, 1, {maxError: '1'});
+		assert(ret.errorMessage === 'A finite positive real number is expected.');
+		assert(ret.errorArgument === 'options.maxError');
+
+		ret = fixpoint.picard(Math.cos, 1, {maxError: NaN});
+		assert(ret.errorMessage === 'A finite positive real number is expected.');
+		assert(ret.errorArgument === 'options.maxError');
+
+		ret = fixpoint.picard(Math.cos, 1, {maxError: 0});
+		assert(ret.errorMessage === 'A positive real number is expected.');
+		assert(ret.errorArgument === 'options.maxError');
+
+		ret = fixpoint.picard(Math.cos, 1, {maxError: -10});
+		assert(ret.errorMessage === 'A positive real number is expected.');
+		assert(ret.errorArgument === 'options.maxError');
+
+		ret = fixpoint.picard(Math.cos, 1, {maxError: 1e-20});
+		assert(ret.errorMessage === 'A positive real number greater than machine epsilon is expected.');
+		assert(ret.errorArgument === 'options.maxError');
+
+		// valid options.maxSteps
+		ret = fixpoint.picard(function(x) { return 2 * x / 3 }, 1.0, {maxSteps: null, maxError : 1e-4, convergenceTest : fixpoint.errtest.relative});
+		assert(ret.numSteps === 1000);
+		assert(ret.errorMessage === 'Maximum number of iterations was reached.');
+
+		ret = fixpoint.picard(function(x) { return 2 * x / 3 }, 1.0, {maxSteps: undefined, maxError : 1e-4, convergenceTest : fixpoint.errtest.relative});
+		assert(ret.numSteps === 1000);
+		assert(ret.errorMessage === 'Maximum number of iterations was reached.');
+
+		ret = fixpoint.picard(Math.cos, 1, {maxSteps: 1});
+		assert(ret.errorMessage === 'Maximum number of iterations was reached.');
+		assert(ret.numSteps === 1);
+
+		ret = fixpoint.picard(Math.cos, 1, {maxSteps: 2});
+		assert(ret.errorMessage === 'Maximum number of iterations was reached.');
+		assert(ret.numSteps === 2);
+
+		ret = fixpoint.picard(Math.cos, 1.0, {maxError : 1e-4, maxSteps : 10});
+		assert(ret.numSteps === 10);
+		assert(ret.errorMessage === 'Maximum number of iterations was reached.');
+
+		// invalid maxSteps
+		ret = fixpoint.picard(Math.cos, 1, {maxSteps: '1'});
+		assert(ret.errorMessage === 'A finite number is expected.');
+		assert(ret.errorArgument === 'options.maxSteps');
+
+		ret = fixpoint.picard(Math.cos, 1, {maxSteps: NaN});
+		assert(ret.errorMessage === 'A finite number is expected.');
+		assert(ret.errorArgument === 'options.maxSteps');
+
+		ret = fixpoint.picard(Math.cos, 1, {maxSteps: 0});
+		assert(ret.errorMessage === 'A number greater than 1 is expected.');
+		assert(ret.errorArgument === 'options.maxSteps');
+
+		ret = fixpoint.picard(Math.cos, 1, {maxSteps: -1});
+		assert(ret.errorMessage === 'A number greater than 1 is expected.');
+		assert(ret.errorArgument === 'options.maxSteps');
+
+		// valid check cycles
+		ret = fixpoint.picard(function(x) { return 3.4 * x * (1- x) }, 0.1, {checkCycles : true });
+		assert(ret.errorMessage.indexOf('Iteration is divergent (cycle detected between iterations') === 0);
+
+		ret = fixpoint.picard(function(x) { return 3.4 * x * (1- x) }, 0.1, {checkCycles : null });
+		assert(ret.errorMessage.indexOf('Iteration is divergent (cycle detected between iterations') === 0);
+
+		ret = fixpoint.picard(function(x) { return 3.4 * x * (1- x) }, 0.1, {checkCycles : undefined });
+		assert(ret.errorMessage.indexOf('Iteration is divergent (cycle detected between iterations') === 0);
+
+		ret = fixpoint.picard(function(x) { return 3.4 * x * (1- x) }, 0.1, {checkCycles : false });
+		assert(ret.xn === undefined);
+		assert(ret.numSteps === 1000);
+		assert(ret.errorMessage === 'Maximum number of iterations was reached.');
+
+		// invalid check cycles
+		ret = fixpoint.picard(Math.cos, 1, {checkCycles: '1'});
+		assert(ret.errorMessage === 'A boolean value is expected.');
+		assert(ret.errorArgument === 'options.checkCycles');
+
+		ret = fixpoint.picard(Math.cos, 1, {checkCycles: 0});
+		assert(ret.errorMessage === 'A boolean value is expected.');
+		assert(ret.errorArgument === 'options.checkCycles');
+
+		ret = fixpoint.picard(Math.cos, 1, {checkCycles: 1});
+		assert(ret.errorMessage === 'A boolean value is expected.');
+		assert(ret.errorArgument === 'options.checkCycles');
+
+		ret = fixpoint.picard(Math.cos, 1, {checkCycles: 'true'});
+		assert(ret.errorMessage === 'A boolean value is expected.');
+		assert(ret.errorArgument === 'options.checkCycles');
+
+		// valid convergenceTest
+		ret = fixpoint.picard(Math.cos, 1.0, {maxError : 1e-4, convergenceTest : fixpoint.errtest.mixed});
+		assert(ret.xn.toFixed(3) === '0.739');
+
+		ret = fixpoint.picard(Math.cos, 1.0, {maxError : 1e-4, convergenceTest : fixpoint.errtest.relative});
+		assert(ret.xn.toFixed(3) === '0.739');
+
+		ret = fixpoint.picard(Math.cos, 1.0, {maxError : 1e-4, convergenceTest : null});
+		assert(ret.xn.toFixed(3) === '0.739');
+
+		ret = fixpoint.picard(Math.cos, 1.0, {maxError : 1e-4, convergenceTest : undefined});
+		assert(ret.xn.toFixed(3) === '0.739');
+
+		ret = fixpoint.picard(Math.cos, 1.0, {maxError : 1e-4, convergenceTest : fixpoint.errtest.absolute});
+		assert(ret.xn.toFixed(3) === '0.739');
+
+		ret = fixpoint.picard(function(x) { return 2 * x / 3 }, 1.0, {maxError : 1e-4, convergenceTest : fixpoint.errtest.relative});
+		assert(ret.xn === undefined);
+		assert(ret.numSteps === 1000);
+		assert(ret.errorMessage === 'Maximum number of iterations was reached.');
+
+		ret = fixpoint.picard(function(x) { return 2 * x / 3 }, 1.0, {maxError : 1e-4, convergenceTest : fixpoint.errtest.absolute});
+		assert(ret.xn.toFixed(3) === '0.000');
+
+		function customConvergenceTest1(maxError, x, xprev1, xprev2, values)
+		{
+			assert(maxError === 1e-4);
+			assert(values != null);
+			return Math.abs(x - xprev1) <= 10 * maxError;
+		}
+		ret = fixpoint.picard(function(x) { return 2 * x / 3 }, 1.0, {maxError : 1e-4, convergenceTest : customConvergenceTest1});
+		assert(ret.xn.toFixed(2) === '0.00');
+
+		function customConvergenceTest2(maxError, x, xprev1, xprev2, values)
+		{
+			assert(maxError === 1e-4);
+			assert(values != null);
+			return false;
+		}
+		ret = fixpoint.picard(function(x) { return 2 * x / 3 }, 1.0, {maxError : 1e-4, convergenceTest : customConvergenceTest2});
+		assert(ret.xn === undefined);
+		assert(ret.numSteps === 1000);
+		assert(ret.errorMessage === 'Maximum number of iterations was reached.');
+
+		// invalid convergenceTest
+		ret = fixpoint.picard(Math.cos, 1.0, {convergenceTest : function(e){} });
+		assert(ret.errorMessage === 'The function should have at least 3 arguments.');
+		assert(ret.errorArgument === 'options.convergenceTest');
+
+		ret = fixpoint.picard(Math.cos, 1.0, {convergenceTest : function(e, x){} });
+		assert(ret.errorMessage === 'The function should have at least 3 arguments.');
+		assert(ret.errorArgument === 'options.convergenceTest');
+
+		ret = fixpoint.picard(Math.cos, 1.0, {convergenceTest : 1 });
+		assert(ret.errorMessage === 'A function is expected.');
+		assert(ret.errorArgument === 'options.convergenceTest');
+
+		// invalid additional optional parameters
+		ret = fixpoint.picard(Math.cos, 1.0, {x : null });
+		assert(ret.warningMessage === 'Invalid optional argument found: x.');
+
+		ret = fixpoint.picard(Math.cos, 1.0, {x : undefined });
+		assert(ret.warningMessage === 'Invalid optional argument found: x.');
+
+		ret = fixpoint.picard(Math.cos, 1.0, {toString : function(){} });
+		assert(ret.warningMessage === 'Invalid optional argument found: toString.');
+	})();
+
+})();
+
+</script>
+</body>
+</html>
